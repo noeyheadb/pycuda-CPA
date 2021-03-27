@@ -3,9 +3,9 @@
 It is only works on CUDA-enabled systems.
 
 ## Environment setup
-- GPUs with compute capability less than 1.3 are not supported.
+- GPUs with compute capability less than 2.x are not supported.
 - Make `pycuda` available by installing the CUDA toolkit and setting environment variables, etc.
-- Test code of `pycuda` is [here](https://documen.tician.de/pycuda/).
+- Test code of `pycuda` is available [here](https://documen.tician.de/pycuda/).
 
 ## Requirements
 - pycuda >= 2020.1
@@ -21,7 +21,7 @@ Demo script is available [here](https://github.com/noeyheadb/pycuda-CPA/blob/mas
 - DDR4 32GB 2666MHz RAM
 - NVIDIA RTX2060 Super
   - GDDR6 8GB Memory
-  - 2176 CUDA cores (Streaming Processors)
+  - 2,176 CUDA cores (Streaming Processor)
   - 7.5 Compute capability
   - ([more](https://en.wikipedia.org/wiki/CUDA#Version_features_and_specifications))
 
