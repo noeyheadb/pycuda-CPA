@@ -13,3 +13,29 @@ It is only works on CUDA-enabled systems.
 
 ## Usage
 Demo script is available [here](https://github.com/noeyheadb/pycuda-CPA/blob/master/demo.py).
+
+## Benchmark
+
+### Environment
+- Intel(R) Core(TM) i5-10500 CPU (Core: 6, Thread: 12)
+- DDR4 32GB 2133MHz RAM
+- NVIDIA RTX2060 Super
+  - GDDR6 8GB Memory
+  - 2176 CUDA cores (Streaming Processors)
+  - 7.5 Compute capability
+  - ([more](https://en.wikipedia.org/wiki/CUDA#Version_features_and_specifications))
+
+### Experimental Setup
+| Target algorithm | Detail                        | # of samples (per trace) |
+| :--------------: | :---------------------------: | :---------------:        |
+| Naïve AES        | 1st byte of 1-round SubBytes  | 24,400                   |
+
+### Results
+| Language | Implementation detail   | # of traces | Time      |
+| :------: | :---------------------: | :---------: | :--:      |
+| Python   | **`pycuda-CPA`**        | 1,000       | **0.41s** |
+| Python   | multiprocessing (12p.)  | 1,000       | 106s      |
+| Python   | **`pycuda-CPA`**        | 5,000       | **1.54s** |
+| Python   | multiprocessing (12p.)  | 5,000       | 418s      |
+| Python   | **`pycuda-CPA`**        | 10,000      | **3.03s** |
+| Python   | multiprocessing (12p.)  | 10,000      | 864s      |
