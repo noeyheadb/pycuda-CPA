@@ -3,12 +3,14 @@ import pycuda.driver as drv
 import numpy as np
 import os
 import time
+from typing import Tuple
 from pathlib import Path
 from pycuda.compiler import SourceModule
 
 
 def cpa_cuda_8_bit(traces: np.ndarray,
                    estimated_power_consumption: np.ndarray,
+                   dtypes: Tuple[str, str, str] = ('double', 'double', 'double'),  # trace, PC, result
                    auto_c_contiguous: bool = True,
                    benchmark: bool = False
                    ) -> np.ndarray:
@@ -17,17 +19,19 @@ def cpa_cuda_8_bit(traces: np.ndarray,
 
     :param traces: shape=(num_of_traces, num_of_samples)
     :param estimated_power_consumption: shape=(num_of_traces, 256)
+    :param dtypes: data type of (trace, P.C, result) - (available : 'double' or 'float')
     :param auto_c_contiguous: If true, the c_contiguous property does not have to be considered. (Copying is performed.)
     :param benchmark: Benchmark the time and the memory. (output to stdout)
     :return: correlation coefficient : shape=(256, num_of_samples)
     """
     num_of_samples = traces.shape[1]
     return cpa_cuda_core(traces, estimated_power_consumption, 256, "calc_corr_8_bit",
-                         (256, 1, 1), (num_of_samples, 1, 1), auto_c_contiguous, benchmark)
+                         (256, 1, 1), (num_of_samples, 1, 1), dtypes, auto_c_contiguous, benchmark)
 
 
 def cpa_cuda_16_bit(traces: np.ndarray,
                     estimated_power_consumption: np.ndarray,
+                    dtypes: Tuple[str, str, str] = ('double', 'double', 'double'),  # trace, PC, result
                     auto_c_contiguous: bool = True,
                     benchmark: bool = False
                     ) -> np.ndarray:
@@ -37,13 +41,14 @@ def cpa_cuda_16_bit(traces: np.ndarray,
 
     :param traces: shape=(num_of_traces, num_of_samples)
     :param estimated_power_consumption: shape=(num_of_traces, 65536)
+    :param dtypes: data type of (trace, P.C, result) - (available : 'double' or 'float')
     :param auto_c_contiguous: If true, the c_contiguous property does not have to be considered. (Copying is performed.)
     :param benchmark: Benchmark the time and the memory. (output to stdout)
     :return: correlation coefficient : shape=(65536, num_of_samples)
     """
     num_of_samples = traces.shape[1]
     return cpa_cuda_core(traces, estimated_power_consumption, 0x10000, "calc_corr_16_bit",
-                         (256, 1, 1), (256, num_of_samples, 1), auto_c_contiguous, benchmark)
+                         (256, 1, 1), (256, num_of_samples, 1), dtypes, auto_c_contiguous, benchmark)
 
 
 def cpa_cuda_core(traces: np.ndarray,
@@ -52,26 +57,40 @@ def cpa_cuda_core(traces: np.ndarray,
                   kernel_func_id: str,
                   thread_shape: tuple,
                   block_shape: tuple,
+                  dtypes: Tuple[str, str, str] = ('double', 'double', 'double'),  # trace, PC, result
                   auto_c_contiguous: bool = True,
                   benchmark: bool = False
                   ) -> np.ndarray:
-    if traces.flags['C_CONTIGUOUS'] is False or estimated_power_consumption.flags['C_CONTIGUOUS'] is False:
-        if auto_c_contiguous:
-            # copying arrays
-            traces = np.ascontiguousarray(traces, dtype=np.float64)
-            estimated_power_consumption = np.ascontiguousarray(estimated_power_consumption, dtype=np.float64)
-        else:
-            raise RuntimeError("'traces' or 'estimated_power_consumption' are not C_CONTIGUOUS. "
-                               "Please use 'np.ascontiguousarray(...)' to make the array C_CONTIGUOUS.")
-    if traces.dtype != np.float64:
-        traces = traces.astype(np.float64, order='C')
-    if estimated_power_consumption.dtype != np.float64:
-        estimated_power_consumption = estimated_power_consumption.astype(np.float64, order='C')
+    np_dtypes = []
+    for i in dtypes:
+        assert i == 'double' or i == 'float'
+        np_dtypes.append(np.float32 if i == 'float' else np.float64)
 
-    result_corr = np.empty(shape=(key_space, traces.shape[1]), order='C', dtype=np.float64)
+    if traces.flags['C_CONTIGUOUS'] is False:
+        if auto_c_contiguous:
+            traces = np.ascontiguousarray(traces, dtype=np_dtypes[0])
+        else:
+            raise RuntimeError("'traces' is not C_CONTIGUOUS. "
+                               "Please use 'np.ascontiguousarray(...)' to make the array C_CONTIGUOUS.")
+    if estimated_power_consumption.flags['C_CONTIGUOUS'] is False:
+        if auto_c_contiguous:
+            estimated_power_consumption = np.ascontiguousarray(estimated_power_consumption, dtype=np_dtypes[1])
+        else:
+            raise RuntimeError("'estimated_power_consumption' is not C_CONTIGUOUS. "
+                               "Please use 'np.ascontiguousarray(...)' to make the array C_CONTIGUOUS.")
+
+    if traces.dtype != np_dtypes[0]:
+        traces = traces.astype(np_dtypes[0], order='C')
+    if estimated_power_consumption.dtype != np_dtypes[1]:
+        estimated_power_consumption = estimated_power_consumption.astype(np_dtypes[1], order='C')
+
+    result_corr = np.empty(shape=(key_space, traces.shape[1]), order='C', dtype=np_dtypes[2])
     with open(str(Path(os.path.abspath(__file__)).parent.parent) + "/cuda_kernels/cpa_kernel.cu", 'r') as kernel_fp:
         kernel_code = ''.join(kernel_fp.readlines())
     kernel_code = kernel_code.replace("#define traceNum -1", f"#define traceNum {traces.shape[0]}")
+    kernel_code = kernel_code.replace("typedef X T_trace;", f"typedef {dtypes[0]} T_trace;")
+    kernel_code = kernel_code.replace("typedef X T_pc;", f"typedef {dtypes[1]} T_pc;")
+    kernel_code = kernel_code.replace("typedef X T_result;", f"typedef {dtypes[2]} T_result;")
     kernel = SourceModule(kernel_code)
     calculate_cor = kernel.get_function(kernel_func_id)
 

@@ -69,5 +69,5 @@ for g_key_1 in range(256):
     for trace_index, p in enumerate(plain_text):
         estimated_power[trace_index, g_key_1] = aes_1r_subbytes_result(p, g_key_1, target_byte=1, return_hw=True)
 
-result_cpa = cpa_cuda_8_bit(trace, estimated_power, True, benchmark=True)
+result_cpa = cpa_cuda_8_bit(trace, estimated_power, dtypes=('float', 'double', 'float'), benchmark=True)
 print(f"\n* Guessed key is 0x{np.argmax(np.max(abs(result_cpa), axis=1)):02X}.")

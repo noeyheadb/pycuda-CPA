@@ -1,8 +1,11 @@
 // ##### Do not modify below definition #####
 #define traceNum -1
+typedef X T_trace;
+typedef X T_pc;
+typedef X T_result;
 // ##########################################
 
-__device__ double calc_corr(double *trace, double *est_pc, int threshold, int i, int j, int i_step, int j_step)
+__device__ double calc_corr(T_trace *trace, T_pc *est_pc, int threshold, int i, int j, int i_step, int j_step)
 {
     double sumXY = 0, sumX = 0, sumY = 0, sumX2 = 0, sumY2 = 0, x, y;
 
@@ -23,7 +26,7 @@ __device__ double calc_corr(double *trace, double *est_pc, int threshold, int i,
         sqrt((traceNum * sumX2 - sumX * sumX) * (traceNum * sumY2 - sumY * sumY));
 }
 
-__global__ void calc_corr_8_bit(double *result, double *trace, double *est_pc)
+__global__ void calc_corr_8_bit(T_result *result, T_trace *trace, T_pc *est_pc)
 {
     // threadIdx.x : Key : 0 ~ 256
     // blockIdx.x  : PoI : 0 ~ #PoI
@@ -33,7 +36,7 @@ __global__ void calc_corr_8_bit(double *result, double *trace, double *est_pc)
         calc_corr(trace, est_pc, gridDim.x * traceNum, blockIdx.x, threadIdx.x, gridDim.x, 256);
 }
 
-__global__ void calc_corr_16_bit(double *result, double *trace, double *est_pc)
+__global__ void calc_corr_16_bit(T_result *result, T_trace *trace, T_pc *est_pc)
 {
     // threadIdx.x : Key_H(8-bit) : 0 ~ 256
     // blockIdx.x  : Key_L(8-bit) : 0 ~ 256
