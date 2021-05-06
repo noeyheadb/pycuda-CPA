@@ -24,9 +24,11 @@ def cpa_cuda_8_bit(traces: np.ndarray,
     :param benchmark: Benchmark the time and the memory. (output to stdout)
     :return: correlation coefficient : shape=(256, num_of_samples)
     """
+    num_of_traces = traces.shape[0]
     num_of_samples = traces.shape[1]
     return cpa_cuda_core(traces, estimated_power_consumption, 256, "calc_corr_8_bit",
-                         (256, 1, 1), (num_of_samples, 1, 1), dtypes, auto_c_contiguous, benchmark)
+                         (256, 1, 1), (num_of_samples, 1, 1), num_of_traces, num_of_samples,
+                         dtypes, auto_c_contiguous, benchmark)
 
 
 def cpa_cuda_16_bit(traces: np.ndarray,
@@ -46,9 +48,11 @@ def cpa_cuda_16_bit(traces: np.ndarray,
     :param benchmark: Benchmark the time and the memory. (output to stdout)
     :return: correlation coefficient : shape=(65536, num_of_samples)
     """
+    num_of_traces = traces.shape[0]
     num_of_samples = traces.shape[1]
     return cpa_cuda_core(traces, estimated_power_consumption, 0x10000, "calc_corr_16_bit",
-                         (256, 1, 1), (256, num_of_samples, 1), dtypes, auto_c_contiguous, benchmark)
+                         (256, 1, 1), (256, num_of_samples, 1), num_of_traces, num_of_samples,
+                         dtypes, auto_c_contiguous, benchmark)
 
 
 def cpa_cuda_core(traces: np.ndarray,
@@ -57,6 +61,8 @@ def cpa_cuda_core(traces: np.ndarray,
                   kernel_func_id: str,
                   thread_shape: tuple,
                   block_shape: tuple,
+                  trace_num: int,
+                  trace_sample: int,
                   dtypes: Tuple[str, str, str] = ('double', 'double', 'double'),  # trace, PC, result
                   auto_c_contiguous: bool = True,
                   benchmark: bool = False
@@ -84,10 +90,10 @@ def cpa_cuda_core(traces: np.ndarray,
     if estimated_power_consumption.dtype != np_dtypes[1]:
         estimated_power_consumption = estimated_power_consumption.astype(np_dtypes[1], order='C')
 
-    result_corr = np.empty(shape=(key_space, traces.shape[1]), order='C', dtype=np_dtypes[2])
+    result_corr = np.empty(shape=(key_space, trace_sample), order='C', dtype=np_dtypes[2])
     with open(str(Path(os.path.abspath(__file__)).parent.parent) + "/cuda_kernels/cpa_kernel.cu", 'r') as kernel_fp:
         kernel_code = ''.join(kernel_fp.readlines())
-    kernel_code = kernel_code.replace("#define traceNum -1", f"#define traceNum {traces.shape[0]}")
+    kernel_code = kernel_code.replace("#define traceNum -1", f"#define traceNum {trace_num}")
     kernel_code = kernel_code.replace("typedef X T_trace;", f"typedef {dtypes[0]} T_trace;")
     kernel_code = kernel_code.replace("typedef X T_pc;", f"typedef {dtypes[1]} T_pc;")
     kernel_code = kernel_code.replace("typedef X T_result;", f"typedef {dtypes[2]} T_result;")
