@@ -23,7 +23,7 @@ Demo script is available [here](https://github.com/noeyheadb/pycuda-CPA/blob/mas
   - GDDR6 8GB Memory
   - 2,176 CUDA cores (Streaming Processor)
   - 7.5 Compute capability
-  - ([more](https://en.wikipedia.org/wiki/CUDA#Version_features_and_specifications))
+  - ([more](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications__technical-specifications-per-compute-capability))
 
 #### Experimental Setup
 | Target algorithm | Detail                        | # of samples (per trace) |
@@ -32,7 +32,7 @@ Demo script is available [here](https://github.com/noeyheadb/pycuda-CPA/blob/mas
 
 #### Results
 | Language | Implementation detail   | # of traces | Time      |
-| :------: | :---------------------: | :---------: | :--:      |
+| :------: | :---------------------: | :---------: | :-------: |
 | Python   | **`pycuda-CPA`**        | 1,000       | **0.41s** |
 | Python   | multiprocessing (12p.)  | 1,000       | 106s      |
 | Python   | **`pycuda-CPA`**        | 5,000       | **1.54s** |
