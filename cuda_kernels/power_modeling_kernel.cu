@@ -44,12 +44,12 @@ __device__ int AES_1_round_SubBytes(unsigned char* textin, unsigned char* textou
 
 __global__ void power_consumption_modeling(double *est_pc, unsigned char *textin, unsigned char *textout)
 {
-    // threadIdx.x : Key_H(8-bit)  : 0 ~ 256
-    // blockIdx.x  : Key_L(8-bit)  : 0 ~ 256
+    // threadIdx.x : Key_L(8-bit)  : 0 ~ 256
+    // blockIdx.x  : Key_H(8-bit)  : 0 ~ 256
     // blockIdx.y  : num_of_traces : 0 ~ #traces
 
     // Example of a second-order attack
-    est_pc[0x10000 * blockIdx.y + (threadIdx.x << 8) + blockIdx.x] =
-        hw(AES_1_round_SubBytes(textin, textout, threadIdx.x, targetByte1) ^
-            AES_1_round_SubBytes(textin, textout, blockIdx.x, targetByte2));
+    est_pc[0x10000 * blockIdx.y + (blockIdx.x << 8) + threadIdx.x] =
+        hw(AES_1_round_SubBytes(textin, textout, blockIdx.x, targetByte1) ^
+            AES_1_round_SubBytes(textin, textout, threadIdx.x, targetByte2));
 }
