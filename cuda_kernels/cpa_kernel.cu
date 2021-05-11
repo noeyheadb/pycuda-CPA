@@ -39,10 +39,10 @@ __global__ void calc_corr_8_bit(T_result *result, T_trace *trace, T_pc *est_pc)
 __global__ void calc_corr_16_bit(T_result *result, T_trace *trace, T_pc *est_pc)
 {
     // threadIdx.x : Key_L(8-bit) : 0 ~ 256
-    // blockIdx.x  : Key_H(8-bit) : 0 ~ 256
-    // blockIdx.y  : PoI          : 0 ~ #PoI
-    // gridDim.y   :              : #PoI
+    // blockIdx.x  : PoI          : 0 ~ #PoI
+    // blockIdx.y  : Key_H(8-bit) : 0 ~ 256
+    // gridDim.x   :              : #PoI
 
-    result[gridDim.y * ((blockIdx.x << 8) + threadIdx.x) + blockIdx.y] =
-        calc_corr(trace, est_pc, gridDim.y * traceNum, blockIdx.y, (blockIdx.x << 8) + threadIdx.x, gridDim.y, 0x10000);
+    result[gridDim.x * ((blockIdx.y << 8) + threadIdx.x) + blockIdx.x] =
+        calc_corr(trace, est_pc, gridDim.x * traceNum, blockIdx.x, (blockIdx.y << 8) + threadIdx.x, gridDim.x, 0x10000);
 }

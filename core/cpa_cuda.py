@@ -51,7 +51,7 @@ def cpa_cuda_16_bit(traces: np.ndarray,
     num_of_traces = traces.shape[0]
     num_of_samples = traces.shape[1]
     return cpa_cuda_core(traces, estimated_power_consumption, 0x10000, "calc_corr_16_bit",
-                         (256, 1, 1), (256, num_of_samples, 1), num_of_traces, num_of_samples,
+                         (256, 1, 1), (num_of_samples, 256, 1), num_of_traces, num_of_samples,
                          dtypes, auto_c_contiguous, benchmark)
 
 
